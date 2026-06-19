@@ -1,0 +1,5 @@
+[server]
+entrypoint = "treasury_search_server.py:treasury_search_app"
+
+[server.dependencies]
+fastmcp = "*"

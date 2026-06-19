@@ -1,0 +1,5 @@
+[server]
+entrypoint = "date_filter_server.py:date_filter_app"
+
+[server.dependencies]
+fastmcp = "*"
