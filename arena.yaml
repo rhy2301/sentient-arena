@@ -1,6 +1,6 @@
 name: "my-grounded-reasoning-agent"
 version: "0.1.0"
-competition: "grounded-reasoning"
+competition: "office-qa"
 
 agent:
   type: "harness"
