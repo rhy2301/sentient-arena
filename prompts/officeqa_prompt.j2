@@ -1,50 +1,46 @@
 You answer one precise numerical question about the U.S. Treasury Bulletin corpus in /app/corpus/.
 Files are named treasury_bulletin_YYYY_MM.txt where the month is zero-padded (01-12). Use the shell and python3 -c freely.
 
-You have an 8-step budget. The flow is two phases: PHASE 1 (intern) locates the file and drafts an answer; PHASE 2 (mentor) reviews the draft; then you write the answer. The senior review happens BEFORE the write, never after.
+You have a hard turn limit. A provisional answer is written to /app/answer.txt as early as possible, so even if you hit the limit, a correct value is already saved. Spend turns reaching a good number fast, not on extra confirmation.
 
 PHASE 1 — Analysis (intern mode)
-Step 1: Run `ls /app/corpus/index* 2>/dev/null` to confirm index.txt exists.
-It contains only a file listing — use it to verify file name patterns, then
-move immediately to Step 2. Do not read beyond the first few lines.
-Step 2: From the question, extract every year and month; build a date hint like 1975_01. Use the date hint to pick the exact file directly: ls /app/corpus/ | grep 1975_01
-Step 3: Find the target page. Page numbers sit alone on their own line: grep -n "^5$" /app/corpus/treasury_bulletin_1975_01.txt
+Step 1: From the question, extract every year and month, and build a date hint like 1975_01.
+Some years are reported with a lag: annual figures usually appear in the next year's early bulletins, and ESF quarterly data appears 1-2 quarters AFTER the quarter-end date (~6 month lag). Confirm the file exists and is the right one:
+  ls /app/corpus/ | grep 1975_01
+Lock the FIRST bulletin that contains the full period the question asks about. That bulletin is your single source of truth for this question.
+
+Step 2: Find the target page. Page numbers sit alone on their own line:
+  grep -n "^5$" /app/corpus/treasury_bulletin_1975_01.txt
 After two failed grep searches, switch to a python3 -c regex scan instead of repeating grep.
-Step 4: Extract the FULL page (never a fixed-line window). Find the next page line too, then slice between them:
+
+Step 3: Extract the FULL page (never a fixed-line window). Find the next page line too, then slice between them:
   grep -n "^5$" file   # START line
   grep -n "^6$" file   # NEXT line
   sed -n 'START,NEXTp' file
-  This guarantees table rows and chart labels anywhere on the page are not cut off.
-Step 5: Find the table value with grep, or compute with python3 -c "..." when the answer needs math. If the question refers to a chart, graph, line plot, or figure: the plotted lines are absent in text-converted PDFs. Treat the remaining text as the chart itself, in priority order: (1) check the page immediately before/after the chart page for an adjacent data table and read the answer directly from it; (2) if none exists, count and read explicit text artifacts on the chart page — exhibit titles, series names, axis labels, period/date labels, average-line labels, date breakpoints, category annotations; (3) choose the number directly supported by those explicit labels, never reconstruct trends or guess from historical context. Draft an answer: the specific value plus its exact location (file, page, table, row, column, unit).
+This guarantees table rows and chart labels anywhere on the page are not cut off.
 
-PHASE 2 — Verification (mentor mode), REQUIRED before writing
-Step 6: Before finalizing your answer, review your intern's analysis as a senior analyst would:
-   - Is the fiscal year / calendar year distinction correct?
-   - Are you reading the correct row AND correct column of the table?
-   - Is the unit correct (millions, billions, thousands, percent)?
-   - Is the time period exactly what the question asks for (not an adjacent year)?
-   - Does the number make sense in magnitude given the context?
-   - For ESF balance sheet questions: 'total capital' or 'nominal capital'
-     means the 'Total capital' line (Capital account + Net income combined),
-     not the Capital account line alone. Similarly, if a question asks for
-     data as of a specific quarter-end date, the relevant bulletin is
-     published 1-2 quarters AFTER that date (ESF data lags ~6 months).
-This is a quick pass/fail check using what you already extracted in Step 5.
-Do NOT open a second bulletin file or re-derive the value from scratch to
-'confirm' it — only go back and fix Step 5 if a specific checklist item
-fails. If all items pass, proceed immediately to Step 7 in the same turn.
-If 6 steps pass without a confirmed answer, run one compact broader search
-(different keyword, broader file scan, or python3 -c regex), then commit to
-the number best supported by what you found.
+Step 4: Find the table value with grep, or compute with python3 -c "..." when the answer needs math.
+If the question refers to a chart, graph, line plot, or figure: the plotted lines are absent in text-converted PDFs. Treat the remaining text as the chart itself, in priority order: (1) check the page immediately before/after the chart page for an adjacent data table and read the answer directly from it; (2) if none exists, read explicit text artifacts on the chart page — exhibit titles, series names, axis labels, period/date labels, average-line labels, date breakpoints, category annotations; (3) choose the number directly supported by those explicit labels, never reconstruct trends or guess from historical context.
 
-WRITE
-Step 7: write the final number only to /app/answer.txt, e.g. python3 -c "open('/app/answer.txt','w').write('18')". Just the value, matching the requested rounding/format.
-CRITICAL: Concluding 'the answer is X' in your reasoning is NOT the same as
-writing it. You must execute the shell write command before ending your
-turn. Do not end a turn after only stating the final answer in text —
-always follow it with the actual python3/echo write call and verify with
-cat /app/answer.txt.
-Step 8 (optional): verify the written file.
+Step 5: WRITE THE CANDIDATE FIRST, before any verification.
+The moment you have a candidate number, write it immediately:
+  python3 -c "open('/app/answer.txt','w').write('2602')"
+Write just the value, matching the requested rounding/format. This provisional write is mandatory and happens before Step 6. A correct value is now saved even if later steps go wrong. Verification can only overwrite this file; it can never skip it.
+
+PHASE 2 — Verification (mentor mode), one pass only
+Step 6: Review your intern's work as a senior analyst, using ONLY the page text already in your context from Step 5. This is a one-pass checklist judgment, NOT a new search. Run the checklist exactly once:
+  - Is the fiscal year / calendar year distinction correct?
+  - Are you reading the correct row AND correct column of the table?
+  - Is the unit correct (millions, billions, thousands, percent)?
+  - Is the time period exactly what the question asks for (not an adjacent year)?
+  - Does the number make sense in magnitude given the context?
+  - For ESF balance sheet questions: 'total capital' or 'nominal capital' means the 'Total capital' line (Capital account + Net income combined), not the Capital account line alone.
+Outcome rule (run once, correct at most once, then stop):
+  - If every item passes: you are done. Stop the turn.
+  - If exactly one item fails: recompute the value from the SAME page text, overwrite /app/answer.txt once, then stop the turn.
+Either way, run the checklist a single time and make at most one correction. Do not re-run the checklist, do not open another bulletin, and do not reconcile the figure across bulletins. Different bulletins publish revised values for the same period; these revisions are expected and are not mistakes in your reading. A provisional answer is already saved, so reaching the turn limit is safe, and a single extra bulletin can only introduce error.
+
+Step 7 (optional): confirm the file with `cat /app/answer.txt`.
 
 Task:
 {{ instruction }}
