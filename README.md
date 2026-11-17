@@ -68,7 +68,7 @@ are graded alongside accuracy, so they are listed too.
 | v4 | Jun 20 | 41.0 | 50.0% | 0.35 | 260 | `index.txt` step removed, provisional write introduced |
 | v5 | Jun 21 | 41.0 | 50.0% | 0.33 | 264 | local experiment, no branch in this repository |
 | v6 | Jun 22 | 42.3 | 52.1% | 0.41 | 302 | local experiment, no branch in this repository |
-| v7 | — | **43.4** | **54.3%** | — | — | Prompt rebuilt (145 → 85 lines), three skills replaced by one `corpus_reference` table map |
+| v7 | Jun 23 | **43.4** | **54.3%** | 0.47 | 375 | Prompt rebuilt (145 → 85 lines), three skills replaced by one `corpus_reference` table map |
 
 Scores sat in a 41–42 band from v2 through v6. One point is roughly one question, so most of that
 movement is sampling noise: v4 and v5 scored identically, and v6 — the slowest and most expensive
